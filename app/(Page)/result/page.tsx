@@ -11,10 +11,10 @@ export default function EventSuccessPage() {
     firstName: "",
     lastName: "",
     userId: "",
-    eventDate: "14/06/2569",
-    eventTime: "16:00 - 22:00",
-    location: "Bangkok, Thailand",
-    address: "123 Event Street, Bangkok",
+    eventDate: "12/09/2026",
+    eventTime: "13:00 - 24:00",
+    location: "JJ Hall ชั้น 6",
+    address: "",
   })
   const [isLoading, setIsLoading] = useState(true)
 
@@ -179,7 +179,7 @@ export default function EventSuccessPage() {
                     {userData.eventDate}
                   </p>
                   <p className="text-[10px] md:text-xs text-slate-400">
-                    Sat - Mon
+                    Saturday
                   </p>
                 </div>
               </div>
@@ -206,9 +206,11 @@ export default function EventSuccessPage() {
                   <p className="font-bold text-[#20123c] text-xs md:text-sm">
                     {userData.location}
                   </p>
-                  <p className="text-[10px] md:text-xs text-slate-400">
-                    {userData.address}
-                  </p>
+                  {userData.address && (
+                    <p className="text-[10px] md:text-xs text-slate-400">
+                      {userData.address}
+                    </p>
+                  )}
                 </div>
               </div>
             </div>
