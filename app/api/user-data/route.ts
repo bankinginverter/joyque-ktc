@@ -110,12 +110,13 @@ export async function PATCH(request: NextRequest) {
       )
     }
 
-    // อัปเดตข้อมูลสถานะ
+    // อัปเดตข้อมูลสถานะ พร้อม join ดึงชื่อ-นามสกุลมาในคำสั่งเดียวกันเลย
+    // (เดิมแยก query select user_details อีกรอบ ทำให้ยิง 2 request ต่อการสแกน 1 ครั้ง)
     const { data, error } = await supabase
       .from("queues")
       .update(updatePayload)
       .eq("user_id", user_id)
-      .select()
+      .select("*, user:user_details(first_name, last_name)")
       .single()
 
     if (error) {
@@ -137,20 +138,10 @@ export async function PATCH(request: NextRequest) {
       throw new Error(error.message || "เกิดข้อผิดพลาดในการอัปเดต Database")
     }
 
-    // ดึงข้อมูลชื่อ-นามสกุลของผู้ใช้ เพื่อส่งกลับไปให้หน้า Scanner แสดงผล
-    const { data: userData } = await supabase
-      .from("user_details")
-      .select("first_name, last_name")
-      .eq("id", user_id)
-      .single()
-
     return NextResponse.json({
       success: true,
       message: "อัปเดตสถานะสำเร็จ",
-      data: {
-        ...data,
-        user: userData || null,
-      },
+      data,
     })
   } catch (error: unknown) {
     console.error("API PATCH Exception:", error)

@@ -22,12 +22,25 @@ export const getSupabaseAdmin = (token?: string) => {
   })
 }
 
+// Cache ผลตรวจสอบ Admin ไว้ชั่วคราวต่อ token เดียวกัน (อยู่ในหน่วยความจำของ function instance)
+// เพื่อไม่ต้องยิงไป Supabase Auth + query ตาราง admin ซ้ำทุกครั้งที่แอดมินสแกน QR รัวๆ
+const ADMIN_CACHE_TTL_MS = 5 * 60 * 1000 // 5 นาที
+const adminVerifyCache = new Map<
+  string,
+  { isValid: boolean; expiresAt: number }
+>()
+
 // ตรวจสอบ Token ของ Admin
 export const verifyAdminApi = async (request: Request) => {
   const authHeader = request.headers.get("Authorization")
   if (!authHeader?.startsWith("Bearer ")) return { isValid: false, token: "" }
 
   const token = authHeader.replace("Bearer ", "")
+
+  const cached = adminVerifyCache.get(token)
+  if (cached && cached.expiresAt > Date.now()) {
+    return { isValid: cached.isValid, token }
+  }
 
   // สร้าง client โดยแนบ Token เพื่อให้ Query ในฐานะ Admin คนนั้น
   const supabase = createClient(
@@ -42,12 +55,18 @@ export const verifyAdminApi = async (request: Request) => {
   const {
     data: { user },
   } = await supabase.auth.getUser(token)
-  if (!user) return { isValid: false, token: "" }
+  if (!user) {
+    adminVerifyCache.set(token, { isValid: false, expiresAt: Date.now() + ADMIN_CACHE_TTL_MS })
+    return { isValid: false, token: "" }
+  }
 
   const { data: admin } = await supabase
     .from("admin")
     .select("id")
     .eq("id", user.id)
     .maybeSingle() // เปลี่ยนเพื่อป้องกันการแจ้งเตือน Error ขยะใน Server Log กรณีผู้ใช้ไม่ใช่ Admin
-  return { isValid: !!admin, token }
+
+  const isValid = !!admin
+  adminVerifyCache.set(token, { isValid, expiresAt: Date.now() + ADMIN_CACHE_TTL_MS })
+  return { isValid, token }
 }
