@@ -12,7 +12,7 @@ export default function EventSuccessPage() {
     lastName: "",
     userId: "",
     eventDate: "12/09/2026",
-    eventTime: "13:00 - 24:00",
+    eventTime: "12:00 - 24:00",
     location: "JJ Hall ชั้น 6",
     address: "",
   })
