@@ -11,6 +11,7 @@ interface QueueItem {
   user_id: string
   queue_number: number
   username: string
+  employee_id: string
   status: string
   gift_status: string
   created_at: string
@@ -128,6 +129,7 @@ export default function AdminDashboardPage() {
   // ตั้งค่าคอลัมน์สำหรับ DataTable
   const columns = [
     { key: "queue_number" as keyof QueueItem, header: "Queue No." },
+    { key: "employee_id" as keyof QueueItem, header: "Employee ID" },
     { key: "username" as keyof QueueItem, header: "Name" },
     {
       key: "status" as keyof QueueItem,

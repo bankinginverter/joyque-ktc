@@ -75,6 +75,7 @@ export async function POST(request: NextRequest) {
 
     const { error: insertQueueError } = await supabase.from("queues").insert({
       user_id: newUser.id,
+      employee_id: employee.employee_id,
       username: `${newUser.first_name} ${newUser.last_name}`.trim(),
     })
 
