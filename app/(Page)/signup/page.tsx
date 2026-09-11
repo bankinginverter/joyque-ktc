@@ -1,54 +1,51 @@
 "use client"
 
 import React, { useActionState } from "react"
-import { IdCard } from "lucide-react"
+import { IdCard, User, Building } from "lucide-react"
 import { useRouter } from "next/navigation"
 
-type RegisterState = {
+type SignupState = {
   error?: string
   success?: boolean
 } | null
 
-export default function RegisterPage() {
+export default function SignupPage() {
   const router = useRouter()
 
-  const registerAction = async (
-    prevState: RegisterState,
-    formData: FormData,
-  ) => {
+  const signupAction = async (prevState: SignupState, formData: FormData) => {
     const employeeId = (formData.get("employeeId") as string || "").trim()
+    const firstName = (formData.get("firstName") as string || "").trim()
+    const lastName = (formData.get("lastName") as string || "").trim()
+    const branch = (formData.get("branch") as string || "").trim()
 
-    if (!employeeId) {
-      return { error: "กรุณากรอกรหัสพนักงาน" }
+    if (!employeeId || !firstName || !lastName || !branch) {
+      return { error: "กรุณากรอกข้อมูลให้ครบทุกช่อง" }
     }
 
     try {
-      const res = await fetch("/api/register", {
+      const res = await fetch("/api/employees", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ employeeId }),
+        body: JSON.stringify({ employeeId, firstName, lastName, branch }),
       })
       const result = await res.json()
 
       if (!res.ok) {
-        return { error: result.error || "ใส่รหัสพนักงานไม่ถูกต้อง" }
+        return { error: result.error || "เกิดข้อผิดพลาดในการบันทึกข้อมูล" }
       }
 
-      // เก็บ userId ไว้ที่เครื่อง เพื่อให้หน้า Result ดึงข้อมูลมาแสดง QR ได้
-      localStorage.setItem("ticketUserId", result.userId)
-
-      router.push("/result")
+      router.push("/register")
       return { success: true }
     } catch {
       return { error: "เกิดข้อผิดพลาดของระบบ กรุณาลองใหม่อีกครั้ง" }
     }
   }
 
-  const [state, formAction, isPending] = useActionState(registerAction, null)
+  const [state, formAction, isPending] = useActionState(signupAction, null)
 
   return (
     <main className="relative min-h-[100dvh] flex flex-col items-center justify-center overflow-hidden bg-[#f0f8ff] font-sans">
-      {/* ================= BACKGROUND (จากหน้า Main) ================= */}
+      {/* ================= BACKGROUND (จากหน้า Register) ================= */}
 
       {/* TOP RIGHT BLOB */}
       <div className="absolute top-[-120px] right-[-80px] h-[320px] w-[320px] rounded-full bg-gradient-to-br from-[#b3e0ff] via-[#80ccff] to-[#33adff] blur-3xl opacity-80 pointer-events-none" />
@@ -101,7 +98,7 @@ export default function RegisterPage() {
           {/* --- Icon Illustration --- */}
           <div className="flex justify-center mb-6 md:mb-8 relative z-10">
             <div className="relative flex h-20 w-20 md:h-[92px] md:w-[92px] items-center justify-center rounded-2xl md:rounded-[1.5rem] bg-gradient-to-br from-[#00a3e0] to-[#007ab3] shadow-[0_18px_30px_rgba(0,163,224,0.18)] transform -rotate-6">
-              <IdCard
+              <User
                 className="h-10 w-10 md:h-12 md:w-12 text-white opacity-90"
                 strokeWidth={2.5}
               />
@@ -115,10 +112,10 @@ export default function RegisterPage() {
           {/* --- Header --- */}
           <div className="text-center mb-8 md:mb-6 relative z-10">
             <h1 className="text-3xl md:text-4xl font-extrabold text-[#003876] mb-2 tracking-tight">
-              ลงทะเบียน
+              Sign Up
             </h1>
             <p className="text-[#70758b] text-sm md:text-base">
-              กรอกรหัสพนักงานเพื่อรับ QR Code เข้างาน
+              ยังไม่มีรหัสพนักงานในระบบ? ลงทะเบียนที่นี่ก่อน
             </p>
           </div>
 
@@ -142,17 +139,59 @@ export default function RegisterPage() {
               />
             </div>
 
-            {/* Register Button */}
+            {/* First Name */}
+            <div className="relative">
+              <User
+                className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400"
+                size={20}
+              />
+              <input
+                type="text"
+                name="firstName"
+                placeholder="ชื่อ"
+                className="w-full bg-white/70 border border-[#e7e1f3] rounded-2xl py-3.5 md:py-4 pl-12 pr-4 outline-none focus:border-[#00a3e0] focus:ring-4 focus:ring-[#00a3e0]/10 transition-all shadow-sm text-[#003876] font-medium placeholder:text-slate-400"
+              />
+            </div>
+
+            {/* Last Name */}
+            <div className="relative">
+              <User
+                className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400"
+                size={20}
+              />
+              <input
+                type="text"
+                name="lastName"
+                placeholder="นามสกุล"
+                className="w-full bg-white/70 border border-[#e7e1f3] rounded-2xl py-3.5 md:py-4 pl-12 pr-4 outline-none focus:border-[#00a3e0] focus:ring-4 focus:ring-[#00a3e0]/10 transition-all shadow-sm text-[#003876] font-medium placeholder:text-slate-400"
+              />
+            </div>
+
+            {/* Branch */}
+            <div className="relative">
+              <Building
+                className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400"
+                size={20}
+              />
+              <input
+                type="text"
+                name="branch"
+                placeholder="สาขา"
+                className="w-full bg-white/70 border border-[#e7e1f3] rounded-2xl py-3.5 md:py-4 pl-12 pr-4 outline-none focus:border-[#00a3e0] focus:ring-4 focus:ring-[#00a3e0]/10 transition-all shadow-sm text-[#003876] font-medium placeholder:text-slate-400"
+              />
+            </div>
+
+            {/* Signup Button */}
             <button
               type="submit"
               disabled={isPending}
               className={`mt-6 md:mt-8 flex h-14 md:h-[64px] w-full items-center justify-center rounded-2xl md:rounded-[20px] text-lg md:text-[20px] font-extrabold text-white transition-all ${
                 isPending
-                  ? "bg-slate-300 cursor-not-allowed shadow-none text-slate-500" // สไตล์ตอนกดแล้ว กำลังโหลด
+                  ? "bg-slate-300 cursor-not-allowed shadow-none text-slate-500"
                   : "bg-gradient-to-r from-[#00c1d5] via-[#00a3e0] to-[#00508a] shadow-[0_20px_35px_rgba(0,163,224,0.25)] hover:scale-[1.015] active:scale-[0.99]"
               }`}
             >
-              {isPending ? "กำลังตรวจสอบ..." : "ยืนยัน"}
+              {isPending ? "กำลังบันทึก..." : "Sign Up"}
             </button>
 
             {/* แสดง Error Message ถ้ามีปัญหาเกิดขึ้นระหว่างบันทึก */}
@@ -162,18 +201,6 @@ export default function RegisterPage() {
               </p>
             )}
           </form>
-
-          {/* ลิงก์สำหรับพนักงานที่ยังไม่มีรหัสในระบบ */}
-          <p className="mt-6 text-center text-sm text-[#70758b] relative z-10">
-            ยังไม่มีรหัสพนักงานในระบบ?{" "}
-            <button
-              type="button"
-              onClick={() => router.push("/signup")}
-              className="font-bold text-[#00a3e0] hover:underline"
-            >
-              ลงทะเบียนที่นี่
-            </button>
-          </p>
         </div>
       </div>
     </main>
