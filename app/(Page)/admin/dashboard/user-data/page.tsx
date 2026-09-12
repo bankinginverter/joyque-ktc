@@ -12,6 +12,7 @@ interface QueueItem {
   queue_number: number
   username: string
   employee_id: string
+  branch: string | null
   status: string
   gift_status: string
   created_at: string
@@ -131,6 +132,7 @@ export default function AdminDashboardPage() {
     { key: "queue_number" as keyof QueueItem, header: "Queue No." },
     { key: "employee_id" as keyof QueueItem, header: "Employee ID" },
     { key: "username" as keyof QueueItem, header: "Name" },
+    { key: "branch" as keyof QueueItem, header: "Branch" },
     {
       key: "status" as keyof QueueItem,
       header: "Check-in",
