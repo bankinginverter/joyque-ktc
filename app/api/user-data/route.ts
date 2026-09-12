@@ -110,23 +110,22 @@ export async function PATCH(request: NextRequest) {
       )
     }
 
-    // อัปเดตข้อมูลสถานะ พร้อม join ดึงชื่อ-นามสกุลมาในคำสั่งเดียวกันเลย
+    // ฟิลด์/ค่าที่กำลังจะเซ็ต ใช้เช็คว่าก่อนหน้านี้เป็นค่าเดิมอยู่แล้วหรือไม่ (สแกนซ้ำ)
+    const targetField = mode === "gift" ? "gift_status" : "status"
+    const targetValue = updatePayload[targetField]
+
+    // อัปเดตเฉพาะกรณีที่ค่ายังไม่ตรงกับเป้าหมาย (neq) พร้อม join ดึงชื่อ-นามสกุลมาในคำสั่งเดียวกันเลย
     // (เดิมแยก query select user_details อีกรอบ ทำให้ยิง 2 request ต่อการสแกน 1 ครั้ง)
     const { data, error } = await supabase
       .from("queues")
       .update(updatePayload)
       .eq("user_id", user_id)
+      .neq(targetField, targetValue)
       .select("*, user:user_details(first_name, last_name)")
-      .single()
+      .maybeSingle()
 
     if (error) {
-      // ดักจับกรณีที่ไม่พบข้อมูล (PGRST116) หรือ รูปแบบ UUID ไม่ถูกต้อง (22P02)
-      if (error.code === "PGRST116") {
-        return NextResponse.json(
-          { error: "ไม่พบข้อมูลคิวนี้ในระบบ" },
-          { status: 404 },
-        )
-      }
+      // ดักจับรูปแบบ UUID ไม่ถูกต้อง (22P02)
       if (error.code === "22P02") {
         return NextResponse.json(
           { error: "รูปแบบ ID ไม่ถูกต้อง" },
@@ -136,6 +135,36 @@ export async function PATCH(request: NextRequest) {
 
       console.error("Supabase PATCH Error:", error)
       throw new Error(error.message || "เกิดข้อผิดพลาดในการอัปเดต Database")
+    }
+
+    // ไม่มีแถวไหนถูกอัปเดต แปลว่า user_id นี้ไม่มีอยู่จริง หรือค่าตรงกับเป้าหมายอยู่แล้ว (สแกนซ้ำ)
+    if (!data) {
+      const { data: current } = await supabase
+        .from("queues")
+        .select("*, user:user_details(first_name, last_name)")
+        .eq("user_id", user_id)
+        .maybeSingle()
+
+      if (!current) {
+        return NextResponse.json(
+          { error: "ไม่พบข้อมูลคิวนี้ในระบบ" },
+          { status: 404 },
+        )
+      }
+
+      const alreadyMessage =
+        targetField === "gift_status" && targetValue === "received"
+          ? "รับของไปแล้ว"
+          : targetField === "status" && targetValue === "checked_in"
+            ? "เข้าร่วมงานแล้ว"
+            : "สถานะนี้ถูกอัปเดตไปแล้ว"
+
+      return NextResponse.json({
+        success: true,
+        alreadyDone: true,
+        message: alreadyMessage,
+        data: current,
+      })
     }
 
     return NextResponse.json({

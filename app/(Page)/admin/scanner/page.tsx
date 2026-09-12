@@ -27,7 +27,7 @@ export default function AdminScanPage() {
   const router = useRouter()
   const [mode, setMode] = useState<ScanMode>("checkin")
   const [status, setStatus] = useState<
-    "idle" | "loading" | "success" | "error"
+    "idle" | "loading" | "success" | "error" | "duplicate"
   >("idle")
   const [message, setMessage] = useState("")
   const [isCheckingAuth, setIsCheckingAuth] = useState(true)
@@ -231,10 +231,17 @@ export default function AdminScanPage() {
         setStatus("error")
         setMessage(result.error || "เกิดข้อผิดพลาดในการอัปเดตคิว")
       } else {
-        setStatus("success")
         const firstName = result.data?.user?.first_name || "ไม่ทราบชื่อ"
         const lastName = result.data?.user?.last_name || ""
-        setMessage(`${actionLabel}: ${firstName} ${lastName}`)
+
+        if (result.alreadyDone) {
+          // สแกนซ้ำ (สถานะเป็นแบบนี้อยู่แล้วก่อนสแกนครั้งนี้) - แจ้งเตือนด้วยตัวอักษรสีแดง
+          setStatus("duplicate")
+          setMessage(`${result.message}: ${firstName} ${lastName}`)
+        } else {
+          setStatus("success")
+          setMessage(`${actionLabel}: ${firstName} ${lastName}`)
+        }
       }
 
       timeoutRef.current = setTimeout(resetScanner, 1000)
@@ -375,13 +382,19 @@ export default function AdminScanPage() {
                   className="text-rose-500 mb-4 animate-bounce"
                 />
               )}
+              {status === "duplicate" && (
+                <XCircle
+                  size={64}
+                  className="text-red-500 mb-4 animate-bounce"
+                />
+              )}
 
               <p
                 className={`text-lg font-bold ${
                   status === "success"
                     ? "text-green-400"
-                    : status === "error"
-                      ? "text-rose-400"
+                    : status === "error" || status === "duplicate"
+                      ? "text-red-500"
                       : "text-white"
                 }`}
               >
