@@ -25,11 +25,11 @@ export async function GET(request: NextRequest) {
     const from = (page - 1) * limit
     const to = from + limit - 1
 
-    // เตรียมคำสั่งดึงข้อมูล (employee_id อยู่ในตาราง queues อยู่แล้ว, branch join มาจาก user_details)
+    // เตรียมคำสั่งดึงข้อมูล (employee_id, branch อยู่ในตาราง queues โดยตรง ไม่ต้อง join แล้ว)
     let query = supabase
       .from("queues")
       // หากในอนาคตข้อมูลมีมากกว่า 100k แถว แนะนำให้พิจารณาเปลี่ยน exact เป็น estimated
-      .select("*, user_details(branch)", { count: "exact" })
+      .select("*", { count: "exact" })
       .order("created_at", { ascending: false }) // เรียงจากใหม่ไปเก่า
       .range(from, to)
 
@@ -48,17 +48,9 @@ export async function GET(request: NextRequest) {
       )
     }
 
-    // ดึง branch ออกมาจาก user_details ที่ join มา ให้ frontend ใช้ตรงๆ ได้เลย (row.branch)
-    const flattenedData = (data || []).map((row) => {
-      const { user_details, ...rest } = row as typeof row & {
-        user_details: { branch: string | null } | null
-      }
-      return { ...rest, branch: user_details?.branch ?? null }
-    })
-
     // ส่งข้อมูลกลับไปพร้อม Meta data สำหรับทำปุ่มเปลี่ยนหน้า
     return NextResponse.json({
-      data: flattenedData,
+      data,
       meta: {
         totalItems: count,
         currentPage: page,
